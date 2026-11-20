@@ -18,6 +18,11 @@
     });
   }
 
+  // 音源：改行・読点・カンマ・スラッシュ区切りでなく「改行」「、」「,」で分ける（名前に・や/を含む音源があるため）
+  function splitVoices(v) {
+    return String(v || "").split(/\r?\n|[、，,]/).map((x) => x.replace(/^[\s・･●○\-－]+/, "").trim()).filter(Boolean);
+  }
+
   function twitterUrl(v) {
     if (!v) return "";
     if (/^https?:\/\//.test(v)) return v;
@@ -74,14 +79,14 @@
         cur.items.push({
           name: val(r, "頒布物"), kind: val(r, "種別"), status: val(r, "新/既"),
           price: val(r, "価格"), sample: val(r, "見本等"), note: val(r, "備考"),
-          voice: val(r, "音源") || val(r, "使用音源"),
+          voices: splitVoices(val(r, "音源") || val(r, "使用音源")),
         });
         if (val(r, "更新日時") > cur.updated) cur.updated = val(r, "更新日時");
       }
     }
     for (const c of circles) {
       c.hasNew = c.items.some((i) => i.status.includes("新"));
-      c.text = [c.spaceRaw, ...c.spaces, c.name, c.owner, c.twitterId, ...c.items.flatMap((i) => [i.name, i.kind, i.note, i.voice])].join(" ").normalize("NFKC").toLowerCase();
+      c.text = [c.spaceRaw, ...c.spaces, c.name, c.owner, c.twitterId, ...c.items.flatMap((i) => [i.name, i.kind, i.note, ...i.voices])].join(" ").normalize("NFKC").toLowerCase();
     }
     return circles;
   }
@@ -104,9 +109,10 @@
     : `<div class="cut">${esc(c.spaceRaw)}</div>`;
   const statusBadge = (s) => s.includes("新") ? `<span class="badge b-new">${esc(s)}</span>` : s ? `<span class="badge b-old">${esc(s)}</span>` : "";
 
-  function renderList() {
-    const list = filtered();
-    $("#view-list").innerHTML = list.map((c, i) => `
+  const blockOf = (c) => (c.spaces[0] || "").split("-")[0] || "";
+  const spaceKey = (c) => { const [b, n] = (c.spaces[0] || "").split("-"); return [b || "\uffff", parseInt(n) || 999]; };
+  function cardHtml(c) {
+    return `
       <article class="card" data-idx="${circles.indexOf(c)}">
         ${cutHtml(c)}
         <div>
@@ -117,7 +123,27 @@
           <div style="font-size:.85rem">${esc(c.owner)}</div>
           <ul class="items-mini">${c.items.slice(0, 4).map((i) => `<li>${statusBadge(i.status)}${esc(i.name)}</li>`).join("")}${c.items.length > 4 ? `<li>…他${c.items.length - 4}件</li>` : ""}</ul>
         </div>
-      </article>`).join("") || "<p>該当するサークルがありません。</p>";
+      </article>`;
+  }
+  function renderList() {
+    const list = filtered().slice().sort((x, y) => {
+      const [a1, a2] = spaceKey(x), [b1, b2] = spaceKey(y);
+      return a1 < b1 ? -1 : a1 > b1 ? 1 : a2 - b2;
+    });
+    const groups = new Map();
+    for (const c of list) {
+      const g = blockOf(c) || "その他";
+      if (!groups.has(g)) groups.set(g, []);
+      groups.get(g).push(c);
+    }
+    const colors = CFG.blockColors || {};
+    const nav = groups.size > 1 ? `<nav class="group-nav">${[...groups.keys()].map((g) =>
+      `<a href="#" data-group="${esc(g)}" style="--gc:${esc(colors[g] || "#ddd")}">${esc(g)}<small>${groups.get(g).length}</small></a>`).join("")}</nav>` : "";
+    $("#view-list").innerHTML = list.length ? nav + [...groups].map(([g, cs]) => `
+      <section class="group" id="group-${esc(g)}" style="--gc:${esc(colors[g] || "#ddd")}">
+        <h2 class="group-title"><span>${esc(g)}</span>${g === "その他" ? "" : "ブロック"}<small>${cs.length}サークル</small></h2>
+        <div class="group-grid">${cs.map(cardHtml).join("")}</div>
+      </section>`).join("") : "<p>該当するサークルがありません。</p>";
     $("#status").textContent = `${list.length} / ${circles.length} サークル`;
   }
 
@@ -310,6 +336,13 @@
     return `<ul class="links">${links.map(([t, u]) => `<li><a href="${esc(u)}" target="_blank" rel="noopener">${t}</a></li>`).join("")}</ul>`;
   }
 
+  const VOICE_SHOW = 8; // これより多い音源は折りたたむ
+  function voicesHtml(vs) {
+    const chips = vs.map((v, k) => `<li${k >= VOICE_SHOW ? " class=more" : ""}>${esc(v)}</li>`).join("");
+    const more = vs.length > VOICE_SHOW ? `<button class="voice-more" data-rest="${vs.length - VOICE_SHOW}">＋ 他${vs.length - VOICE_SHOW}件を表示</button>` : "";
+    return `<div class="voices"><span class="voice-label">🎤 使用音源 ${vs.length}</span><ul class="voice-list">${chips}</ul>${more}</div>`;
+  }
+
   function openDetail(c) {
     const link = (u, t) => safeUrl(u) ? `<a href="${esc(u)}" target="_blank" rel="noopener">${esc(t)}</a>` : esc(u);
     const onMap = c.spaces.find((s) => layout.some((l) => l.space === s));
@@ -330,13 +363,13 @@
         </div>
       </div>
       <div class="items-wrap"><table class="items">
-        <thead><tr><th>頒布物</th><th>種別</th><th>新/既</th><th>価格</th><th>音源</th><th>見本等</th><th class="c-note">備考</th></tr></thead>
+        <thead><tr><th>頒布物</th><th>種別</th><th>新/既</th><th>価格</th><th>見本等</th><th class="c-note">備考</th></tr></thead>
         <tbody>${c.items.map((i) => `<tr>
           <td>${esc(i.name)}</td><td>${esc(i.kind)}</td><td>${statusBadge(i.status)}</td>
           <td class="price">${i.price ? (/^\d+$/.test(i.price) ? "¥" + Number(i.price).toLocaleString() : esc(i.price)) : "-"}</td>
-          <td class="c-voice">${linkify(i.voice)}</td>
           <td>${i.sample ? link(i.sample, safeUrl(i.sample) ? "見本" : i.sample) : ""}</td>
-          <td class="c-note">${i.note ? `<div class="note">${linkify(i.note)}</div>` : ""}</td></tr>`).join("") || '<tr><td colspan="7">頒布物情報はまだありません</td></tr>'}</tbody>
+          <td class="c-note">${i.note ? `<div class="note">${linkify(i.note)}</div>` : ""}</td></tr>
+          ${i.voices.length ? `<tr class="voice-row"><td colspan="6">${voicesHtml(i.voices)}</td></tr>` : ""}`).join("") || '<tr><td colspan="6">頒布物情報はまだありません</td></tr>'}</tbody>
       </table></div>
       ${c.updated ? `<p class="updated">更新日時(目安)：${esc(c.updated)}</p>` : ""}`;
     history.replaceState(null, "", "#" + encodeURIComponent(c.spaces[0] || c.name));
@@ -376,6 +409,13 @@
 
     document.querySelectorAll(".filters input, .filters select").forEach((el) => el.addEventListener("input", rerender));
     document.querySelectorAll(".tabs button").forEach((b) => b.addEventListener("click", () => setView(b.dataset.view)));
+    $("#view-list").addEventListener("click", (e) => {
+      const a = e.target.closest(".group-nav a"); if (!a) return;
+      e.preventDefault();
+      const sec = document.getElementById("group-" + a.dataset.group);
+      const hdr = getComputedStyle($("header")).position === "sticky" ? $("header").offsetHeight : 0;
+      if (sec) window.scrollTo({ top: sec.getBoundingClientRect().top + scrollY - hdr - 8, behavior: "smooth" });
+    });
     $("#view-list").addEventListener("click", (e) => { const card = e.target.closest(".card"); if (card) openDetail(circles[card.dataset.idx]); });
     setupZoom();
     const mapOpen = (e) => { if (e.type === "click" && view.moved >= 4) return; const g = e.target.closest(".m-space.has"); if (g) openDetail(bySpace.get(g.dataset.space)); };
@@ -384,6 +424,12 @@
     $("#detail .close").addEventListener("click", () => $("#detail").close());
     $("#detail").addEventListener("click", (e) => {
       if (e.target.id === "detail") $("#detail").close();
+      const vm = e.target.closest(".voice-more");
+      if (vm) {
+        const box = vm.closest(".voices"), open = box.classList.toggle("open");
+        vm.textContent = open ? "－ 折りたたむ" : `＋ 他${vm.dataset.rest}件を表示`;
+        return;
+      }
       const btn = e.target.closest(".to-map");
       if (btn) {
         $("#detail").close();

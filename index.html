@@ -11,7 +11,8 @@
   <h1 id="site-title">頒布物まとめ（非公式）</h1>
   <p class="notice">※ファンによる非公式まとめです。最新情報は各サークル様の告知をご確認ください。</p>
   <nav class="tabs">
-    <button data-view="list" class="active">一覧</button>
+    <button data-view="about">概要</button>
+    <button data-view="list">サークル一覧</button>
     <button data-view="map">配置図</button>
   </nav>
   <div class="filters">
@@ -24,9 +25,10 @@
 </header>
 
 <main>
-  <section id="view-list"></section>
+  <section id="view-about"></section>
+  <section id="view-list" hidden></section>
   <section id="view-map" hidden>
-    <p class="hint">スペースをタップすると詳細が開きます。ピンチ・ホイール・＋－ボタンで拡大縮小、ドラッグで移動できます。</p>
+    <p class="hint">スペースをタップすると詳細が開きます。ドラッグで移動、＋－ボタン・ダブルクリック・ピンチ・Ctrl(⌘)＋ホイールで拡大縮小できます。</p>
     <div id="map-wrap">
       <div class="zoom-ctrl">
         <button id="zoom-in" aria-label="拡大">＋</button>
@@ -35,6 +37,7 @@
         <button id="zoom-reset" aria-label="全体表示">全体</button>
       </div>
       <div id="map-svg-host"></div>
+      <div id="map-hint">Ctrl（Macは⌘）＋ホイールで拡大・縮小</div>
     </div>
   </section>
   <p id="status"></p>

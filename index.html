@@ -37,6 +37,7 @@
         <button id="zoom-reset" aria-label="全体表示">全体</button>
       </div>
       <div id="map-svg-host"></div>
+      <div id="map-tip" hidden></div>
       <div id="map-hint">Ctrl（Macは⌘）＋ホイールで拡大・縮小</div>
     </div>
   </section>
@@ -45,7 +46,7 @@
 
 <dialog id="detail">
   <button class="close" aria-label="閉じる">×</button>
-  <div id="detail-body"></div>
+  <div id="detail-body" tabindex="-1" autofocus></div>
 </dialog>
 
 <script src="vendor/papaparse.min.js"></script>

@@ -74,13 +74,14 @@
         cur.items.push({
           name: val(r, "頒布物"), kind: val(r, "種別"), status: val(r, "新/既"),
           price: val(r, "価格"), sample: val(r, "見本等"), note: val(r, "備考"),
+          voice: val(r, "音源") || val(r, "使用音源"),
         });
         if (val(r, "更新日時") > cur.updated) cur.updated = val(r, "更新日時");
       }
     }
     for (const c of circles) {
       c.hasNew = c.items.some((i) => i.status.includes("新"));
-      c.text = [c.spaceRaw, ...c.spaces, c.name, c.owner, c.twitterId, ...c.items.flatMap((i) => [i.name, i.kind, i.note])].join(" ").normalize("NFKC").toLowerCase();
+      c.text = [c.spaceRaw, ...c.spaces, c.name, c.owner, c.twitterId, ...c.items.flatMap((i) => [i.name, i.kind, i.note, i.voice])].join(" ").normalize("NFKC").toLowerCase();
     }
     return circles;
   }
@@ -151,7 +152,7 @@
       return `<g class="${cls}" data-space="${esc(l.space)}"${c ? ` tabindex="0" role="button" aria-label="${esc(l.space)} ${esc(c.name)}"` : ""}>
         <rect x="${l.x}" y="${l.y}" width="${l.w}" height="${l.h}"${l.color ? ` style="fill:${esc(l.color)}"` : ""}/>
         <text x="${l.x + l.w / 2}" y="${l.y + l.h / 2}">${esc(label)}</text>
-        <title>${esc(l.space)}${c ? " " + esc(c.name) : "（情報なし）"}</title></g>`;
+      </g>`;
     }).join("");
     const base = { x: minX - .3, y: minY - .3, w: maxX - minX + .6, h: maxY - minY + .6 };
     const first = !view.base;
@@ -257,6 +258,25 @@
         hintTimer = setTimeout(() => $("#map-hint").classList.remove("show"), 1500);
       }
     }, { passive: false });
+    // マウスでクリックしたときにフォーカス枠（青い丸枠）が出ないように
+    host.addEventListener("mousedown", (e) => e.preventDefault());
+    // ホバーでサークル情報をポップアップ
+    const tip = $("#map-tip");
+    host.addEventListener("pointermove", (e) => {
+      const g = e.pointerType === "mouse" && !host.classList.contains("dragging") ? e.target.closest(".m-space") : null;
+      if (!g) { tip.hidden = true; return; }
+      const c = bySpace.get(g.dataset.space);
+      tip.innerHTML = c
+        ? `<b>${esc(c.name)}</b><span>${esc(c.spaceRaw)}${c.owner ? "　代表：" + esc(c.owner) : ""}</span>`
+        : `<span>${esc(g.dataset.space)}（情報なし）</span>`;
+      tip.hidden = false;
+      const wr = $("#map-wrap").getBoundingClientRect();
+      let x = e.clientX - wr.left + 14, y = e.clientY - wr.top + 16;
+      if (x + tip.offsetWidth > wr.width - 4) x = e.clientX - wr.left - tip.offsetWidth - 10;
+      if (y + tip.offsetHeight > wr.height - 4) y = e.clientY - wr.top - tip.offsetHeight - 10;
+      tip.style.left = x + "px"; tip.style.top = y + "px";
+    });
+    host.addEventListener("pointerleave", () => { tip.hidden = true; });
     host.addEventListener("dblclick", (e) => { if (!e.target.closest(".m-space.has")) zoomAt(2, e.clientX, e.clientY); });
     $("#zoom-in").addEventListener("click", () => zoomAt(1.5));
     $("#zoom-out").addEventListener("click", () => zoomAt(1 / 1.5));
@@ -309,14 +329,15 @@
           ${onMap ? `<button class="to-map" data-space="${esc(onMap)}">📍 配置図で場所を見る</button>` : ""}
         </div>
       </div>
-      <table class="items">
-        <thead><tr><th>頒布物</th><th>種別</th><th>新/既</th><th>価格</th><th>見本等</th><th class="c-note">備考</th></tr></thead>
+      <div class="items-wrap"><table class="items">
+        <thead><tr><th>頒布物</th><th>種別</th><th>新/既</th><th>価格</th><th>音源</th><th>見本等</th><th class="c-note">備考</th></tr></thead>
         <tbody>${c.items.map((i) => `<tr>
           <td>${esc(i.name)}</td><td>${esc(i.kind)}</td><td>${statusBadge(i.status)}</td>
           <td class="price">${i.price ? (/^\d+$/.test(i.price) ? "¥" + Number(i.price).toLocaleString() : esc(i.price)) : "-"}</td>
+          <td class="c-voice">${linkify(i.voice)}</td>
           <td>${i.sample ? link(i.sample, safeUrl(i.sample) ? "見本" : i.sample) : ""}</td>
-          <td class="c-note">${esc(i.note)}</td></tr>`).join("") || '<tr><td colspan="6">頒布物情報はまだありません</td></tr>'}</tbody>
-      </table>
+          <td class="c-note">${i.note ? `<div class="note">${linkify(i.note)}</div>` : ""}</td></tr>`).join("") || '<tr><td colspan="7">頒布物情報はまだありません</td></tr>'}</tbody>
+      </table></div>
       ${c.updated ? `<p class="updated">更新日時(目安)：${esc(c.updated)}</p>` : ""}`;
     history.replaceState(null, "", "#" + encodeURIComponent(c.spaces[0] || c.name));
     if (!$("#detail").open) $("#detail").showModal();
@@ -372,7 +393,10 @@
         window.scrollTo({ top: $("#view-map").getBoundingClientRect().top + scrollY - hdr - 8 });
       }
     });
-    $("#detail").addEventListener("close", () => history.replaceState(null, "", location.pathname));
+    $("#detail").addEventListener("close", () => {
+      history.replaceState(null, "", location.pathname);
+      setTimeout(() => document.activeElement?.blur?.(), 0); // 閉じた後のフォーカス枠を消す
+    });
 
     let saved = "about"; try { saved = localStorage.getItem("view") || "about"; } catch {}
     renderList();

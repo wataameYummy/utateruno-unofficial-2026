@@ -104,7 +104,8 @@
       (!kind || c.items.some((i) => i.kind === kind)));
   }
 
-  const cutHtml = (c) => c.cut
+  // サークルカット：config.js の showCuts を true にすると表示（今は非表示）
+  const cutHtml = (c) => !CFG.showCuts ? "" : c.cut
     ? `<img class="cut" src="${esc(c.cut)}" alt="${esc(c.name)} サークルカット" loading="lazy">`
     : `<div class="cut">${esc(c.spaceRaw)}</div>`;
   const statusBadge = (s) => s.includes("新") ? `<span class="badge b-new">${esc(s)}</span>` : s ? `<span class="badge b-old">${esc(s)}</span>` : "";
@@ -343,6 +344,27 @@
     return `<div class="voices"><span class="voice-label">🎤 使用音源 ${vs.length}</span><ul class="voice-list">${chips}</ul>${more}</div>`;
   }
 
+  // スクロールできる部分に案内を出す（スマホではスクロールバーが見えないため）
+  function updateScrollHints() {
+    const outer = $("#detail .items-outer");
+    if (outer) {
+      const w = outer.querySelector(".items-wrap");
+      const upd = () => {
+        outer.style.setProperty("--wrapw", w.clientWidth + "px");
+        outer.classList.toggle("can-scroll", w.scrollWidth > w.clientWidth + 2);
+        outer.classList.toggle("at-end", w.scrollLeft + w.clientWidth >= w.scrollWidth - 2);
+      };
+      w.addEventListener("scroll", upd, { passive: true });
+      upd();
+    }
+    document.querySelectorAll("#detail .note-box").forEach((box) => {
+      const n = box.querySelector(".note");
+      const upd = () => box.classList.toggle("more", n.scrollHeight > n.clientHeight + 2 && n.scrollTop + n.clientHeight < n.scrollHeight - 4);
+      n.addEventListener("scroll", upd, { passive: true });
+      upd();
+    });
+  }
+
   function openDetail(c) {
     const link = (u, t) => safeUrl(u) ? `<a href="${esc(u)}" target="_blank" rel="noopener">${esc(t)}</a>` : esc(u);
     const onMap = c.spaces.find((s) => layout.some((l) => l.space === s));
@@ -362,18 +384,19 @@
           ${onMap ? `<button class="to-map" data-space="${esc(onMap)}">📍 配置図で場所を見る</button>` : ""}
         </div>
       </div>
-      <div class="items-wrap"><table class="items">
+      <div class="items-outer"><p class="scroll-hint">◀ 表は横にスクロールできます ▶</p><div class="items-wrap"><table class="items">
         <thead><tr><th>頒布物</th><th>種別</th><th>新/既</th><th>価格</th><th>見本等</th><th class="c-note">備考</th></tr></thead>
         <tbody>${c.items.map((i) => `<tr>
           <td>${esc(i.name)}</td><td>${esc(i.kind)}</td><td>${statusBadge(i.status)}</td>
           <td class="price">${i.price ? (/^\d+$/.test(i.price) ? "¥" + Number(i.price).toLocaleString() : esc(i.price)) : "-"}</td>
           <td>${i.sample ? link(i.sample, safeUrl(i.sample) ? "見本" : i.sample) : ""}</td>
-          <td class="c-note">${i.note ? `<div class="note">${linkify(i.note)}</div>` : ""}</td></tr>
+          <td class="c-note">${i.note ? `<div class="note-box"><div class="note">${linkify(i.note)}</div></div>` : ""}</td></tr>
           ${i.voices.length ? `<tr class="voice-row"><td colspan="6">${voicesHtml(i.voices)}</td></tr>` : ""}`).join("") || '<tr><td colspan="6">頒布物情報はまだありません</td></tr>'}</tbody>
-      </table></div>
+      </table></div></div>
       ${c.updated ? `<p class="updated">更新日時(目安)：${esc(c.updated)}</p>` : ""}`;
     history.replaceState(null, "", "#" + encodeURIComponent(c.spaces[0] || c.name));
     if (!$("#detail").open) $("#detail").showModal();
+    updateScrollHints();
   }
 
   function setView(v) {

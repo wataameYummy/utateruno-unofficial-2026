@@ -13,6 +13,8 @@ window.SITE_CONFIG = {
   fallbackLayoutCsv: "data/layout.csv",
   // サークルカットがファイル名だけの場合に付けるフォルダ
   cutBasePath: "cuts/",
+  // サークルカットを表示するか（true で表示。シートの「サークルカット」列はそのまま残してOK）
+  showCuts: false,
   // サークル一覧のブロック見出しの色（配置図の色と同じ）
   blockColors: { A: "#e8b4b4", B: "#c3dcf2", C: "#fefbd6", D: "#dcf5de", E: "#e3d9f3" },
 };

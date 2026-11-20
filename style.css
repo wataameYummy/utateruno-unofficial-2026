@@ -1,9 +1,7 @@
 :root {
+  color-scheme: light;
   --bg: #fafaf7; --fg: #222; --muted: #777; --card: #fff; --line: #ddd;
-  --accent: #2f7de1; --new: #e0475b; --old: #4a90c8; --r18: #b03060; --hl: #ffd54f;
-}
-@media (prefers-color-scheme: dark) {
-  :root { --bg: #16171a; --fg: #eee; --muted: #999; --card: #222428; --line: #3a3c42; --hl: #8a6d00; }
+  --accent: #2f7de1; --link: #3f6fa8; --new: #e0475b; --old: #4a90c8; --r18: #b03060; --hl: #ffd54f;
 }
 * { box-sizing: border-box; }
 [hidden] { display: none !important; }
@@ -80,12 +78,21 @@ dialog .close { position: absolute; right: 12px; top: 8px; font-size: 1.5rem; bo
 dl.meta { display: grid; grid-template-columns: auto 1fr; gap: 2px 12px; margin: 8px 0; font-size: .9rem; }
 dl.meta dt { color: var(--muted); }
 dl.meta dd { margin: 0; }
-.items-wrap { overflow-x: auto; margin-top: 12px; -webkit-overflow-scrolling: touch; }
+dialog a, #view-about a { color: var(--link); }
+dl.meta a { text-decoration: none; }
+dl.meta a:hover { text-decoration: underline; }
+.items-outer { position: relative; margin-top: 12px; }
+.items-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+/* 横スクロールできるときの案内と右端の影 */
+.scroll-hint { display: none; font-size: .78rem; color: var(--muted); margin: 0 0 4px; }
+.items-outer.can-scroll .scroll-hint { display: block; }
+.items-outer::after { content: ""; position: absolute; top: 0; right: 0; bottom: 0; width: 28px; pointer-events: none; background: linear-gradient(to right, rgba(255,255,255,0), rgba(0,0,0,.12)); opacity: 0; transition: opacity .2s; }
+.items-outer.can-scroll:not(.at-end)::after { opacity: 1; }
 .items { width: 100%; min-width: 640px; border-collapse: collapse; font-size: .9rem; }
 .items td, .items th { white-space: nowrap; }
 .items td:first-child { white-space: normal; min-width: 9em; }
 .voice-row td { padding-top: 0; }
-.voices { background: var(--bg); border-radius: 8px; padding: 6px 10px; }
+.voices { background: var(--bg); border-radius: 8px; padding: 6px 10px; position: sticky; left: 4px; max-width: calc(var(--wrapw, 100%) - 8px); }
 .voice-label { font-size: .78rem; color: var(--muted); display: block; margin-bottom: 4px; }
 .voice-list { display: flex; flex-wrap: wrap; gap: 4px 6px; margin: 0; padding: 0; list-style: none; white-space: normal; }
 .voice-list li { font-size: .8rem; padding: 1px 8px; border-radius: 999px; background: var(--card); border: 1px solid var(--line); }
@@ -94,6 +101,8 @@ dl.meta dd { margin: 0; }
 .voice-more { margin-top: 6px; border: none; background: none; color: var(--accent); font-size: .8rem; cursor: pointer; padding: 0; }
 .items tr:has(+ .voice-row) td { border-bottom: none; }.items .c-note { white-space: normal; min-width: 14em; max-width: 22em; }
 .items .note { max-height: 7.5em; overflow-y: auto; white-space: pre-wrap; word-break: break-word; }
+.note-box { position: relative; }
+.note-box.more::after { content: "▼ スクロールで続きを表示"; position: absolute; left: 0; right: 0; bottom: 0; padding-top: 18px; font-size: .7rem; color: var(--muted); text-align: center; pointer-events: none; background: linear-gradient(rgba(255,255,255,0), #fff 70%); }
 .items a { color: var(--accent); }
 .items th, .items td { border-bottom: 1px solid var(--line); padding: 6px 4px; text-align: left; vertical-align: top; }
 .items td.price { text-align: right; white-space: nowrap; }

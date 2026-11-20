@@ -11,5 +11,5 @@ window.SITE_CONFIG = {
   // サークルカットがファイル名だけの場合に付けるフォルダ
   cutBasePath: "cuts/",
   // 配置図の列ごとの色（スペース番号の先頭文字）
-  rowColors: { A: "#ef7fbf", B: "#80a8f6", C: "#f5d27a", D: "#b18af0" },
+  rowColors: { A: "#e07a7a", B: "#6fa8dc", C: "#eedd55", D: "#7fcf8a", E: "#a993d6" },
 };

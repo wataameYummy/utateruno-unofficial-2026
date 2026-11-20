@@ -130,18 +130,20 @@
     const deco = layout.filter((l) => !l.space).map((l) => {
       const cx = l.x + l.w / 2, cy = l.y + l.h / 2;
       const vertical = l.h > l.w * 1.5 && l.label.length > 1;
+      const fs = l.size ? ` style="font-size:${l.size}px"` : "";
       const text = !l.label ? "" : vertical
-        ? [...l.label].map((ch, i, a) => `<text x="${cx}" y="${cy + (i - (a.length - 1) / 2) * .7}">${esc(ch === "ー" ? "｜" : ch)}</text>`).join("")
-        : `<text x="${cx}" y="${cy}">${esc(l.label)}</text>`;
+        ? [...l.label].map((ch, i, a) => `<text x="${cx}" y="${cy + (i - (a.length - 1) / 2) * (l.size || .6) * 1.15}"${fs}>${esc(ch === "ー" ? "｜" : ch)}</text>`).join("")
+        : `<text x="${cx}" y="${cy}"${fs}>${esc(l.label)}</text>`;
       if (l.color === "枠") return `<rect class="m-frame" x="${l.x}" y="${l.y}" width="${l.w}" height="${l.h}"/>`;
       const fill = l.color && l.color !== "none" ? l.color : "transparent";
-      return `<g class="m-label${l.label.length === 1 ? " m-row" : ""}"><rect x="${l.x}" y="${l.y}" width="${l.w}" height="${l.h}" rx=".15" style="fill:${esc(fill)}"/>${text}</g>`;
+      const bldg = /^#?f{3}(f{3})?$|^white$/i.test(l.color) ? " m-bldg" : "";
+      return `<g class="m-label${bldg}"><rect x="${l.x}" y="${l.y}" width="${l.w}" height="${l.h}" rx=".15" style="fill:${esc(fill)}"/>${text}</g>`;
     }).join("");
     const spaces = layout.filter((l) => l.space).map((l) => {
       const c = bySpace.get(l.space);
       const cls = ["m-space", c && "has", c && anyFilter && hits.has(c) && "hit", c && anyFilter && !hits.has(c) && "dim"].filter(Boolean).join(" ");
       const color = l.color || rowColors[l.space.split("-")[0]] || "#ccc";
-      const label = l.label || (l.w < 2 ? String(+l.space.split("-")[1] || l.space) : l.space);
+      const label = l.label || (l.w < 2 ? (l.space.split("-")[1] || l.space) : l.space);
       const name = c && l.w >= 2 ? (c.name.length > 7 ? c.name.slice(0, 7) + "…" : c.name) : "";
       return `<g class="${cls}" data-space="${esc(l.space)}"${c ? ` tabindex="0" role="button" aria-label="${esc(l.space)} ${esc(c.name)}"` : ""}>
         <rect x="${l.x}" y="${l.y}" width="${l.w}" height="${l.h}" style="fill:${esc(color)}"/>
@@ -149,7 +151,70 @@
         ${name ? `<text class="m-name" x="${l.x + l.w / 2}" y="${l.y + l.h / 2 + .18}">${esc(name)}</text>` : ""}
         <title>${esc(l.space)}${c ? " " + esc(c.name) : "（情報なし）"}</title></g>`;
     }).join("");
-    $("#map-wrap").innerHTML = `<svg viewBox="${minX - .3} ${minY - .3} ${maxX - minX + .6} ${maxY - minY + .6}" xmlns="http://www.w3.org/2000/svg">${deco}${spaces}</svg>`;
+    const base = { x: minX - .3, y: minY - .3, w: maxX - minX + .6, h: maxY - minY + .6 };
+    if (!view.base || view.base.w !== base.w || view.base.h !== base.h) { view.base = base; view.vb = { ...base }; }
+    $("#map-svg-host").innerHTML = `<svg style="aspect-ratio:${base.w}/${base.h}" xmlns="http://www.w3.org/2000/svg">${deco}${spaces}</svg>`;
+    applyView();
+  }
+
+  // ===== 配置図の拡大縮小・移動 =====
+  const view = { base: null, vb: null, moved: 0 };
+  const svgEl = () => $("#map-svg-host svg");
+  function applyView() {
+    const svg = svgEl(); if (!svg || !view.vb) return;
+    const b = view.base, v = view.vb;
+    // はみ出しすぎないように制限
+    v.x = Math.min(Math.max(v.x, b.x - v.w * .5), b.x + b.w - v.w * .5);
+    v.y = Math.min(Math.max(v.y, b.y - v.h * .5), b.y + b.h - v.h * .5);
+    svg.setAttribute("viewBox", `${v.x} ${v.y} ${v.w} ${v.h}`);
+    $("#zoom-level").textContent = Math.round((b.w / v.w) * 100) + "%";
+  }
+  function toSvg(clientX, clientY) {
+    const svg = svgEl(); const pt = svg.createSVGPoint(); pt.x = clientX; pt.y = clientY;
+    return pt.matrixTransform(svg.getScreenCTM().inverse());
+  }
+  function zoomAt(factor, clientX, clientY) {
+    const v = view.vb, b = view.base; if (!v) return;
+    const svg = svgEl(); const r = svg.getBoundingClientRect();
+    if (clientX == null) { clientX = r.left + r.width / 2; clientY = r.top + r.height / 2; }
+    const p = toSvg(clientX, clientY);
+    const nw = Math.min(Math.max(v.w / factor, b.w / 10), b.w);
+    const k = nw / v.w;
+    view.vb = { x: p.x - (p.x - v.x) * k, y: p.y - (p.y - v.y) * k, w: nw, h: v.h * k };
+    applyView();
+  }
+  function setupZoom() {
+    const host = $("#map-svg-host");
+    const pointers = new Map();
+    let last = null;
+    host.addEventListener("pointerdown", (e) => {
+      pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      if (pointers.size === 1) view.moved = 0;
+      last = null;
+    });
+    window.addEventListener("pointermove", (e) => {
+      if (!pointers.has(e.pointerId) || !view.vb) return;
+      const prev = pointers.get(e.pointerId);
+      pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      if (pointers.size === 1) {
+        const m = svgEl().getScreenCTM();
+        view.vb.x -= (e.clientX - prev.x) / m.a; view.vb.y -= (e.clientY - prev.y) / m.d;
+        view.moved += Math.abs(e.clientX - prev.x) + Math.abs(e.clientY - prev.y);
+        applyView();
+      } else if (pointers.size === 2) {
+        const [a, b] = [...pointers.values()];
+        const d = Math.hypot(a.x - b.x, a.y - b.y), mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2;
+        if (last) zoomAt(d / last.d, mx, my);
+        last = { d }; view.moved = 999;
+      }
+    });
+    const up = (e) => { pointers.delete(e.pointerId); last = null; };
+    window.addEventListener("pointerup", up); window.addEventListener("pointercancel", up);
+    host.addEventListener("wheel", (e) => { e.preventDefault(); zoomAt(Math.exp(-e.deltaY * .0015), e.clientX, e.clientY); }, { passive: false });
+    host.addEventListener("dblclick", (e) => { e.preventDefault(); if (!e.target.closest(".m-space.has")) zoomAt(2, e.clientX, e.clientY); });
+    $("#zoom-in").addEventListener("click", () => zoomAt(1.5));
+    $("#zoom-out").addEventListener("click", () => zoomAt(1 / 1.5));
+    $("#zoom-reset").addEventListener("click", () => { view.vb = { ...view.base }; applyView(); });
   }
 
   function linkList(c) {
@@ -212,7 +277,7 @@
     layout = lRows.map((r) => ({
       space: expandSpaces(val(r, "スペース"))[0] || "",
       x: +val(r, "x") || 0, y: +val(r, "y") || 0,
-      w: +val(r, "幅") || 1, h: +val(r, "高さ") || 1, label: val(r, "ラベル"), color: val(r, "色"),
+      w: +val(r, "幅") || 1, h: +val(r, "高さ") || 1, label: val(r, "ラベル"), color: val(r, "色"), size: +val(r, "文字サイズ") || 0,
     }));
     const kinds = [...new Set(circles.flatMap((c) => c.items.map((i) => i.kind)).filter(Boolean))];
     $("#f-kind").insertAdjacentHTML("beforeend", kinds.map((k) => `<option>${esc(k)}</option>`).join(""));
@@ -220,7 +285,8 @@
     document.querySelectorAll(".filters input, .filters select").forEach((el) => el.addEventListener("input", rerender));
     document.querySelectorAll(".tabs button").forEach((b) => b.addEventListener("click", () => setView(b.dataset.view)));
     $("#view-list").addEventListener("click", (e) => { const card = e.target.closest(".card"); if (card) openDetail(circles[card.dataset.idx]); });
-    const mapOpen = (e) => { const g = e.target.closest(".m-space.has"); if (g) openDetail(bySpace.get(g.dataset.space)); };
+    setupZoom();
+    const mapOpen = (e) => { if (e.type === "click" && view.moved > 8) return; const g = e.target.closest(".m-space.has"); if (g) openDetail(bySpace.get(g.dataset.space)); };
     $("#map-wrap").addEventListener("click", mapOpen);
     $("#map-wrap").addEventListener("keydown", (e) => { if (e.key === "Enter") mapOpen(e); });
     $("#detail .close").addEventListener("click", () => $("#detail").close());

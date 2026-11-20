@@ -26,8 +26,16 @@
 <main>
   <section id="view-list"></section>
   <section id="view-map" hidden>
-    <p class="hint">スペースをタップすると詳細が開きます。検索に一致したスペースが強調されます。</p>
-    <div id="map-wrap"></div>
+    <p class="hint">スペースをタップすると詳細が開きます。ピンチ・ホイール・＋－ボタンで拡大縮小、ドラッグで移動できます。</p>
+    <div id="map-wrap">
+      <div class="zoom-ctrl">
+        <button id="zoom-in" aria-label="拡大">＋</button>
+        <span id="zoom-level">100%</span>
+        <button id="zoom-out" aria-label="縮小">－</button>
+        <button id="zoom-reset" aria-label="全体表示">全体</button>
+      </div>
+      <div id="map-svg-host"></div>
+    </div>
   </section>
   <p id="status"></p>
 </main>

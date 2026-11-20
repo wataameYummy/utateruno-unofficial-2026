@@ -29,16 +29,25 @@ main { padding: 16px; max-width: 1200px; margin: 0 auto; }
 .b-new { background: var(--new); } .b-old { background: var(--old); } .b-r18 { background: var(--r18); } .b-pay { background: #3a9a5b; }
 .items-mini { font-size: .82rem; color: var(--muted); margin: 4px 0 0; padding: 0; list-style: none; }
 
-#map-wrap { overflow: auto; border: 1px solid var(--line); border-radius: 10px; background: var(--card); padding: 8px; }
-#map-wrap svg { width: 100%; min-width: 900px; height: auto; display: block; background: #fff; border-radius: 6px; }
+#map-wrap { overflow: hidden; border: 1px solid var(--line); border-radius: 10px; background: var(--card); padding: 8px; }
+#map-wrap { position: relative; }
+#map-svg-host { touch-action: none; user-select: none; -webkit-user-select: none; cursor: grab; }
+#map-svg-host:active { cursor: grabbing; }
+#map-wrap svg { width: 100%; max-height: 78vh; display: block; background: #fff; border-radius: 6px; }
+.zoom-ctrl { display: flex; justify-content: flex-end; align-items: center; gap: 6px; margin-bottom: 6px; }
+.zoom-ctrl button { width: 36px; height: 32px; border: 1px solid var(--line); background: var(--bg); color: var(--fg); border-radius: 6px; font-size: 1rem; cursor: pointer; }
+.zoom-ctrl #zoom-reset { font-size: .7rem; width: auto; padding: 0 6px; }
+.zoom-ctrl span { font-size: .7rem; color: var(--muted); }
 .m-frame { fill: #fff; stroke: #222; stroke-width: .15; }
-.m-space rect { stroke: #222; stroke-width: .06; fill-opacity: .45; }
+.m-space rect { stroke: #222; stroke-width: .06; }
+.m-space:not(.has) rect { fill: #fff !important; }
+.m-bldg rect { stroke: #222; stroke-width: .1; }
 .m-space.has rect { fill-opacity: 1; cursor: pointer; }
 .m-space.has { cursor: pointer; }
 .m-space.has:hover rect, .m-space.has:focus rect { stroke: #e0475b; stroke-width: .12; }
 .m-space.hit rect { stroke: #e0475b; stroke-width: .14; }
 .m-space.dim { opacity: .3; }
-.m-space text { font-size: .5px; fill: #222; pointer-events: none; text-anchor: middle; dominant-baseline: central; }
+.m-space text { font-size: .55px; fill: #222; pointer-events: none; text-anchor: middle; dominant-baseline: central; }
 .m-space .m-name { font-size: .2px; fill: #444; }
 .m-label text { font-size: .6px; fill: #222; text-anchor: middle; dominant-baseline: central; font-weight: bold; }
 .m-row text { font-size: 1px; }

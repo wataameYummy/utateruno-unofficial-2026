@@ -10,4 +10,6 @@ window.SITE_CONFIG = {
   fallbackLayoutCsv: "data/layout.csv",
   // サークルカットがファイル名だけの場合に付けるフォルダ
   cutBasePath: "cuts/",
+  // 配置図の列ごとの色（スペース番号の先頭文字）
+  rowColors: { A: "#ef7fbf", B: "#80a8f6", C: "#f5d27a", D: "#b18af0" },
 };

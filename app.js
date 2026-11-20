@@ -124,22 +124,32 @@
     const hits = new Set(filtered());
     const anyFilter = hits.size !== circles.length;
     if (!layout.length) { $("#map-wrap").textContent = "配置データがありません"; return; }
-    const maxX = Math.max(...layout.map((l) => l.x + l.w)), maxY = Math.max(...layout.map((l) => l.y + l.h));
     const minX = Math.min(...layout.map((l) => l.x)), minY = Math.min(...layout.map((l) => l.y));
-    const g = layout.map((l) => {
-      if (!l.space) {
-        return `<g class="m-label"><rect x="${l.x + .04}" y="${l.y + .04}" width="${l.w - .08}" height="${l.h - .08}" rx=".08"/><text x="${l.x + l.w / 2}" y="${l.y + l.h / 2}">${esc(l.label)}</text></g>`;
-      }
+    const maxX = Math.max(...layout.map((l) => l.x + l.w)), maxY = Math.max(...layout.map((l) => l.y + l.h));
+    const rowColors = CFG.rowColors || {};
+    const deco = layout.filter((l) => !l.space).map((l) => {
+      const cx = l.x + l.w / 2, cy = l.y + l.h / 2;
+      const vertical = l.h > l.w * 1.5 && l.label.length > 1;
+      const text = !l.label ? "" : vertical
+        ? [...l.label].map((ch, i, a) => `<text x="${cx}" y="${cy + (i - (a.length - 1) / 2) * .7}">${esc(ch === "ー" ? "｜" : ch)}</text>`).join("")
+        : `<text x="${cx}" y="${cy}">${esc(l.label)}</text>`;
+      if (l.color === "枠") return `<rect class="m-frame" x="${l.x}" y="${l.y}" width="${l.w}" height="${l.h}"/>`;
+      const fill = l.color && l.color !== "none" ? l.color : "transparent";
+      return `<g class="m-label${l.label.length === 1 ? " m-row" : ""}"><rect x="${l.x}" y="${l.y}" width="${l.w}" height="${l.h}" rx=".15" style="fill:${esc(fill)}"/>${text}</g>`;
+    }).join("");
+    const spaces = layout.filter((l) => l.space).map((l) => {
       const c = bySpace.get(l.space);
       const cls = ["m-space", c && "has", c && anyFilter && hits.has(c) && "hit", c && anyFilter && !hits.has(c) && "dim"].filter(Boolean).join(" ");
-      const name = c ? c.name.length > 7 ? c.name.slice(0, 7) + "…" : c.name : "";
+      const color = l.color || rowColors[l.space.split("-")[0]] || "#ccc";
+      const label = l.label || (l.w < 2 ? String(+l.space.split("-")[1] || l.space) : l.space);
+      const name = c && l.w >= 2 ? (c.name.length > 7 ? c.name.slice(0, 7) + "…" : c.name) : "";
       return `<g class="${cls}" data-space="${esc(l.space)}"${c ? ` tabindex="0" role="button" aria-label="${esc(l.space)} ${esc(c.name)}"` : ""}>
-        <rect x="${l.x + .03}" y="${l.y + .03}" width="${l.w - .06}" height="${l.h - .06}" rx=".06"/>
-        <text x="${l.x + l.w / 2}" y="${l.y + l.h / 2 - (name ? .12 : 0)}">${esc(l.label || l.space)}</text>
+        <rect x="${l.x}" y="${l.y}" width="${l.w}" height="${l.h}" style="fill:${esc(color)}"/>
+        <text x="${l.x + l.w / 2}" y="${l.y + l.h / 2 - (name ? .12 : 0)}">${esc(label)}</text>
         ${name ? `<text class="m-name" x="${l.x + l.w / 2}" y="${l.y + l.h / 2 + .18}">${esc(name)}</text>` : ""}
-        <title>${esc(l.space)} ${esc(c?.name || "")}</title></g>`;
+        <title>${esc(l.space)}${c ? " " + esc(c.name) : "（情報なし）"}</title></g>`;
     }).join("");
-    $("#map-wrap").innerHTML = `<svg viewBox="${minX - .2} ${minY - .2} ${maxX - minX + .4} ${maxY - minY + .4}" xmlns="http://www.w3.org/2000/svg">${g}</svg>`;
+    $("#map-wrap").innerHTML = `<svg viewBox="${minX - .3} ${minY - .3} ${maxX - minX + .6} ${maxY - minY + .6}" xmlns="http://www.w3.org/2000/svg">${deco}${spaces}</svg>`;
   }
 
   function linkList(c) {
@@ -202,7 +212,7 @@
     layout = lRows.map((r) => ({
       space: expandSpaces(val(r, "スペース"))[0] || "",
       x: +val(r, "x") || 0, y: +val(r, "y") || 0,
-      w: +val(r, "幅") || 1, h: +val(r, "高さ") || 1, label: val(r, "ラベル"),
+      w: +val(r, "幅") || 1, h: +val(r, "高さ") || 1, label: val(r, "ラベル"), color: val(r, "色"),
     }));
     const kinds = [...new Set(circles.flatMap((c) => c.items.map((i) => i.kind)).filter(Boolean))];
     $("#f-kind").insertAdjacentHTML("beforeend", kinds.map((k) => `<option>${esc(k)}</option>`).join(""));

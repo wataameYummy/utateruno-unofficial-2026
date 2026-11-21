@@ -116,3 +116,22 @@ dl.meta a:hover { text-decoration: underline; }
 .updated { font-size: .8rem; color: var(--muted); text-align: right; }
 #detail-body:focus { outline: none; }
 @media (max-width: 560px) { .d-head .cut { width: 96px; height: 136px; } }
+
+/* お気に入り・メモ */
+.card { position: relative; }
+.card-body { min-width: 0; flex: 1; }
+.card.is-fav { border-color: #e8b931; box-shadow: inset 0 0 0 1px #e8b931; }
+.fav-btn { border: none; background: none; cursor: pointer; font-size: 1.4rem; line-height: 1; color: #b9b9b9; padding: 2px 4px; }
+.fav-btn.on { color: #e8a800; }
+.fav-btn:hover { color: #e8a800; }
+.card .fav-btn { position: absolute; top: 8px; right: 8px; }
+.d-title .fav-btn { font-size: 1.5rem; vertical-align: middle; }
+.memo-mini { margin: 6px 0 0; font-size: .8rem; color: #6b5a1e; background: #fff8dc; border-radius: 6px; padding: 2px 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.memo-box { margin-top: 16px; background: #fffbea; border: 1px solid #f0e2a8; border-radius: 10px; padding: 10px 12px; }
+.memo-box label { font-size: .9rem; font-weight: bold; display: block; margin-bottom: 6px; }
+.memo-box small { font-weight: normal; color: var(--muted); }
+.memo-box textarea { width: 100%; box-sizing: border-box; border: 1px solid var(--line); border-radius: 6px; padding: 8px; font: inherit; font-size: 16px; resize: vertical; background: #fff; }
+.memo-status { display: block; min-height: 1.2em; font-size: .75rem; color: var(--muted); text-align: right; }
+.m-space.fav rect { fill: #fff1b8; }
+.m-space .m-star { font-size: .55px; fill: #e8a800; text-anchor: end; dominant-baseline: hanging; pointer-events: none; }
+#map-tip .tip-memo { margin-top: 3px; color: #ffe58a; opacity: 1; }

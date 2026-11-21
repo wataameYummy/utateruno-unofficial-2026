@@ -112,11 +112,25 @@
 
   let circles = [], layout = [], bySpace = new Map();
 
+  // ===== お気に入り・メモ（閲覧者のブラウザにだけ保存） =====
+  const STORE_KEY = "utateruno-mydata-v1";
+  let mine = {};
+  try { mine = JSON.parse(localStorage.getItem(STORE_KEY) || "{}") || {}; } catch { mine = {}; }
+  const myKey = (c) => c.name || c.spaceRaw; // スペース番号が変わっても残るようサークル名で保存
+  const my = (c) => mine[myKey(c)] || {};
+  function saveMine(c, patch) {
+    const k = myKey(c), v = { ...my(c), ...patch };
+    if (!v.fav && !v.memo) delete mine[k]; else mine[k] = v;
+    try { localStorage.setItem(STORE_KEY, JSON.stringify(mine)); return true; } catch { return false; }
+  }
+  const favStar = (c) => `<button class="fav-btn${my(c).fav ? " on" : ""}" data-idx="${circles.indexOf(c)}" aria-pressed="${!!my(c).fav}" title="お気に入り">${my(c).fav ? "★" : "☆"}</button>`;
+
   function filtered() {
     const q = $("#q").value.normalize("NFKC").toLowerCase().trim();
-    const fNew = $("#f-new").checked, kind = $("#f-kind").value;
+    const fNew = $("#f-new").checked, fFav = $("#f-fav").checked, kind = $("#f-kind").value;
     return circles.filter((c) =>
-      (!q || q.split(/\s+/).every((w) => c.text.includes(w))) &&
+      (!q || q.split(/\s+/).every((w) => c.text.includes(w) || (my(c).memo || "").normalize("NFKC").toLowerCase().includes(w))) &&
+      (!fFav || my(c).fav) &&
       (!fNew || c.hasNew) &&
       (!kind || c.items.some((i) => i.kind === kind)));
   }
@@ -131,13 +145,15 @@
   const spaceKey = (c) => { const [b, n] = (c.spaces[0] || "").split("-"); return [b || "\uffff", parseInt(n) || 999]; };
   function cardHtml(c) {
     return `
-      <article class="card" data-idx="${circles.indexOf(c)}">
+      <article class="card${my(c).fav ? " is-fav" : ""}" data-idx="${circles.indexOf(c)}">
+        ${favStar(c)}
         ${cutHtml(c)}
-        <div>
+        <div class="card-body">
           <span class="space">${esc(c.spaceRaw)}</span>
           <h2>${esc(c.name)}</h2>
           <div style="font-size:.85rem">${esc(c.owner)}</div>
           <ul class="items-mini">${c.items.slice(0, 4).map((i) => `<li>${statusBadge(i.status)}${esc(i.name)}</li>`).join("")}${c.items.length > 4 ? `<li>…他${c.items.length - 4}件</li>` : ""}</ul>
+          ${my(c).memo ? `<p class="memo-mini">📝 ${esc(my(c).memo.split("\n")[0].slice(0, 40))}</p>` : ""}
         </div>
       </article>`;
   }
@@ -189,11 +205,12 @@
     const spaces = layout.filter((l) => l.space).map((l) => {
       const c = bySpace.get(l.space);
       const cls = ["m-space", c && "has", c && anyFilter && hits.has(c) && "hit", c && anyFilter && !hits.has(c) && "dim",
-        view.focus && c && c.spaces.includes(view.focus) && "focus"].filter(Boolean).join(" ");
+        view.focus && c && c.spaces.includes(view.focus) && "focus", c && my(c).fav && "fav"].filter(Boolean).join(" ");
       const label = l.label || (l.w < 2 ? (l.space.split("-")[1] || l.space) : l.space);
       return `<g class="${cls}" data-space="${esc(l.space)}"${c ? ` tabindex="0" role="button" aria-label="${esc(l.space)} ${esc(c.name)}"` : ""}>
         <rect x="${l.x}" y="${l.y}" width="${l.w}" height="${l.h}"${l.color ? ` style="fill:${esc(l.color)}"` : ""}/>
         <text x="${l.x + l.w / 2}" y="${l.y + l.h / 2}">${esc(label)}</text>
+        ${c && my(c).fav ? `<text class="m-star" x="${l.x + l.w - .02}" y="${l.y + .02}">★</text>` : ""}
       </g>`;
     }).join("");
     const base = { x: minX - .3, y: minY - .3, w: maxX - minX + .6, h: maxY - minY + .6 };
@@ -309,7 +326,7 @@
       if (!g) { tip.hidden = true; return; }
       const c = bySpace.get(g.dataset.space);
       tip.innerHTML = c
-        ? `<b>${esc(c.name)}</b><span>${esc(c.spaceRaw)}${c.owner ? "　代表：" + esc(c.owner) : ""}</span>`
+        ? `<b>${my(c).fav ? "★ " : ""}${esc(c.name)}</b><span>${esc(c.spaceRaw)}${c.owner ? "　代表：" + esc(c.owner) : ""}</span>${my(c).memo ? `<span class="tip-memo">📝 ${esc(my(c).memo.slice(0, 60))}</span>` : ""}`
         : `<span>${esc(g.dataset.space)}（情報なし）</span>`;
       tip.hidden = false;
       const wr = $("#map-wrap").getBoundingClientRect();
@@ -397,7 +414,7 @@
         ${cutHtml(c)}
         <div style="flex:1;min-width:200px">
           <span class="space">${esc(c.spaceRaw)}</span>
-          <h2>${esc(c.name)}</h2>
+          <h2 class="d-title">${esc(c.name)} ${favStar(c)}</h2>
           <dl class="meta">
             <dt>代表者</dt><dd>${esc(c.owner) || "-"}</dd>
             <dt>X</dt><dd>${c.twitters.length ? c.twitters.map((t, k) => {
@@ -418,6 +435,11 @@
           <td class="c-note">${i.note ? `<div class="note-box"><div class="note">${linkify(i.note)}</div></div>` : ""}</td></tr>
           ${i.voices.length ? `<tr class="voice-row"><td colspan="6">${voicesHtml(i.voices)}</td></tr>` : ""}`).join("") || '<tr><td colspan="6">頒布物情報はまだありません</td></tr>'}</tbody>
       </table></div></div>
+      <div class="memo-box">
+        <label for="memo-input">📝 自分用メモ <small>（このブラウザにだけ保存されます）</small></label>
+        <textarea id="memo-input" data-idx="${circles.indexOf(c)}" rows="3" placeholder="買いたいもの、予算、回る順番など">${esc(my(c).memo || "")}</textarea>
+        <span class="memo-status" aria-live="polite"></span>
+      </div>
       ${c.updated ? `<p class="updated">更新日時(目安)：${esc(c.updated)}</p>` : ""}`;
     history.replaceState(null, "", "#" + encodeURIComponent(c.spaces[0] || c.name));
     if (!$("#detail").open) $("#detail").showModal();
@@ -433,6 +455,11 @@
     try { localStorage.setItem("view", v); } catch {}
   }
 
+  let refreshBehindDialog = false;
+  function updateFavCount() {
+    const n = circles.filter((c) => my(c).fav).length;
+    $("#fav-count").textContent = n ? `（${n}）` : "";
+  }
   function rerender() { renderList(); if (!$("#view-map").hidden) renderMap(); }
 
   async function init() {
@@ -464,7 +491,34 @@
       const hdr = getComputedStyle($("header")).position === "sticky" ? $("header").offsetHeight : 0;
       if (sec) window.scrollTo({ top: sec.getBoundingClientRect().top + scrollY - hdr - 8, behavior: "smooth" });
     });
-    $("#view-list").addEventListener("click", (e) => { const card = e.target.closest(".card"); if (card) openDetail(circles[card.dataset.idx]); });
+    $("#view-list").addEventListener("click", (e) => {
+      if (e.target.closest(".fav-btn")) return;
+      const card = e.target.closest(".card"); if (card) openDetail(circles[card.dataset.idx]);
+    });
+    // お気に入りボタン（一覧・詳細どちらでも）
+    document.addEventListener("click", (e) => {
+      const b = e.target.closest(".fav-btn"); if (!b) return;
+      e.stopPropagation();
+      const c = circles[b.dataset.idx], on = !my(c).fav;
+      saveMine(c, { fav: on });
+      document.querySelectorAll(`.fav-btn[data-idx="${b.dataset.idx}"]`).forEach((x) => {
+        x.classList.toggle("on", on); x.textContent = on ? "★" : "☆"; x.setAttribute("aria-pressed", on);
+      });
+      updateFavCount();
+      if ($("#detail").open) refreshBehindDialog = true; else rerender();
+    });
+    // メモ：入力したら自動保存
+    let memoTimer = 0;
+    $("#detail").addEventListener("input", (e) => {
+      if (e.target.id !== "memo-input") return;
+      const c = circles[e.target.dataset.idx], st = $("#detail .memo-status");
+      st.textContent = "…";
+      clearTimeout(memoTimer);
+      memoTimer = setTimeout(() => {
+        st.textContent = saveMine(c, { memo: e.target.value.trim() ? e.target.value : "" }) ? "保存しました" : "保存できませんでした（ブラウザの設定を確認してください）";
+        refreshBehindDialog = true;
+      }, 400);
+    });
     setupZoom();
     const mapOpen = (e) => { if (e.type === "click" && view.moved >= 4) return; const g = e.target.closest(".m-space.has"); if (g) openDetail(bySpace.get(g.dataset.space)); };
     $("#map-svg-host").addEventListener("click", mapOpen);
@@ -488,11 +542,13 @@
       }
     });
     $("#detail").addEventListener("close", () => {
+      if (refreshBehindDialog) { refreshBehindDialog = false; rerender(); }
       history.replaceState(null, "", location.pathname);
       setTimeout(() => document.activeElement?.blur?.(), 0); // 閉じた後のフォーカス枠を消す
     });
 
     let saved = "about"; try { saved = localStorage.getItem("view") || "about"; } catch {}
+    updateFavCount();
     renderList();
     setView(saved);
     // URL末尾 #A-01 で直接そのサークルを開ける（共有用）

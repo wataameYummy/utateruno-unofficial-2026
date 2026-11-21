@@ -160,6 +160,11 @@
         </div>
       </article>`;
   }
+  // ブロックのテーマカラー（CSS変数 --gc 淡い色 / --gd 濃い色）
+  function blockVars(g) {
+    const colors = CFG.blockColors || {}, darks = CFG.blockDarkColors || {};
+    return `--gc:${esc(colors[g] || "#ece8f2")};--gd:${esc(darks[g] || "#7a7090")}`;
+  }
   function renderList() {
     const list = filtered().slice().sort((x, y) => {
       const [a1, a2] = spaceKey(x), [b1, b2] = spaceKey(y);
@@ -171,8 +176,7 @@
       if (!groups.has(g)) groups.set(g, []);
       groups.get(g).push(c);
     }
-    const colors = CFG.blockColors || {}, darks = CFG.blockDarkColors || {};
-    const gvars = (g) => `--gc:${esc(colors[g] || "#ece8f2")};--gd:${esc(darks[g] || "#7a7090")}`;
+    const gvars = blockVars;
     const nav = groups.size > 1 ? `<nav class="group-nav">${[...groups.keys()].map((g) =>
       `<a href="#" data-group="${esc(g)}" style="${gvars(g)}">${esc(g)}<small>${groups.get(g).length}</small></a>`).join("")}</nav>` : "";
     $("#view-list").innerHTML = list.length ? nav + [...groups].map(([g, cs]) => `
@@ -457,6 +461,7 @@
       </div>
       ${c.updated ? `<p class="updated">更新日時(目安)：${esc(c.updated)}</p>` : ""}`;
     history.replaceState(null, "", "#" + encodeURIComponent(c.spaces[0] || c.name));
+    $("#detail").setAttribute("style", blockVars(blockOf(c)));
     if (!$("#detail").open) $("#detail").showModal();
     updateScrollHints();
   }

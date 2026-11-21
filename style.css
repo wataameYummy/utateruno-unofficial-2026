@@ -261,3 +261,23 @@ dialog .close { width: 36px; height: 36px; border-radius: 50%; background: var(-
 .group .card:hover { border-color: var(--gd); box-shadow: 0 8px 20px color-mix(in srgb, var(--gd) 22%, transparent); }
 .group .card .space { color: var(--gd); }
 .group .card.is-fav { border-color: var(--yellow); }
+
+/* ===== サークル詳細：ブロックのテーマカラー ===== */
+#detail { --gm: color-mix(in srgb, var(--gd, #8c72dd) 38%, #fff); border-top: 10px solid var(--gm); }
+#detail .space { color: var(--gd); }
+#detail .close { background: var(--gc); color: var(--gd); }
+#detail .links a { border-color: var(--gm); background: var(--gc); color: var(--gd); }
+#detail .links a:hover { background: var(--gd); border-color: var(--gd); color: #fff; }
+#detail .to-map { background: var(--gd); box-shadow: 0 3px 0 color-mix(in srgb, var(--gd) 70%, #000); }
+#detail .to-map:active { box-shadow: 0 1px 0 color-mix(in srgb, var(--gd) 70%, #000); }
+#detail .voice-tag { background: var(--gc); color: var(--gd); }
+#detail .voice-tag:hover { background: var(--gd); color: #fff; }
+#detail .voice-more { color: var(--gd); }
+#detail .items th { color: var(--gd); border-bottom-color: var(--gc); }
+#detail .items td { border-bottom-color: color-mix(in srgb, var(--gd) 18%, #fff); }
+#detail dl.meta a { color: var(--gd); }
+
+/* 一覧のお気に入り星：上の色帯の分だけ下げて、スペース番号と高さをそろえる */
+.card .fav-btn { top: 12px; right: 10px; }
+.group .card .fav-btn { top: 15px; }
+#detail .items a { color: var(--gd); }

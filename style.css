@@ -1,7 +1,7 @@
 :root {
   color-scheme: light;
   --bg: #fafaf7; --fg: #222; --muted: #777; --card: #fff; --line: #ddd;
-  --accent: #2f7de1; --link: #3f6fa8; --new: #e0475b; --old: #4a90c8; --r18: #b03060; --hl: #ffd54f;
+  --accent: #2f7de1; --link: #3f6fa8; --new: #e0475b; --old: #4a90c8; --hl: #ffd54f;
 }
 * { box-sizing: border-box; }
 [hidden] { display: none !important; }
@@ -31,7 +31,7 @@ main { padding: 16px; max-width: 1200px; margin: 0 auto; }
 .card h2 { font-size: 1rem; margin: 0 0 2px; }
 .space { font-weight: bold; color: var(--accent); }
 .badge { display: inline-block; font-size: .7rem; padding: 0 6px; border-radius: 4px; color: #fff; margin-right: 4px; vertical-align: middle; }
-.b-new { background: var(--new); } .b-old { background: var(--old); } .b-r18 { background: var(--r18); } .b-pay { background: #3a9a5b; }
+.b-new { background: var(--new); } .b-old { background: var(--old); }
 .items-mini { font-size: .82rem; color: var(--muted); margin: 4px 0 0; padding: 0; list-style: none; }
 
 #map-wrap { position: relative; overflow: hidden; border: 1px solid var(--line); border-radius: 10px; background: var(--card); padding: 8px; }

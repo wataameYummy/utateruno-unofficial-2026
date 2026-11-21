@@ -85,13 +85,10 @@
           owners: lines(val(r, "代表者名")),
           owner: lines(val(r, "代表者名")).join("、"),
           twitters: parseTwitters(val(r, "Twitter")),
-          pixiv: val(r, "Pixiv"),
           other1: val(r, "その他1"),
           other2: val(r, "その他2"),
-          pay: val(r, "電子決済"),
           menu: val(r, "お品書き"),
           notice: val(r, "告知"),
-          r18: yes(val(r, "R-18")),
           updated: val(r, "更新日時"),
           items: [],
         };
@@ -117,12 +114,10 @@
 
   function filtered() {
     const q = $("#q").value.normalize("NFKC").toLowerCase().trim();
-    const fNew = $("#f-new").checked, fPay = $("#f-pay").checked, fR18 = $("#f-r18").checked, kind = $("#f-kind").value;
+    const fNew = $("#f-new").checked, kind = $("#f-kind").value;
     return circles.filter((c) =>
       (!q || q.split(/\s+/).every((w) => c.text.includes(w))) &&
       (!fNew || c.hasNew) &&
-      (!fPay || yes(c.pay)) &&
-      (fR18 || !c.r18) &&
       (!kind || c.items.some((i) => i.kind === kind)));
   }
 
@@ -140,8 +135,6 @@
         ${cutHtml(c)}
         <div>
           <span class="space">${esc(c.spaceRaw)}</span>
-          ${c.r18 ? '<span class="badge b-r18">R-18</span>' : ""}
-          ${yes(c.pay) ? '<span class="badge b-pay">電子決済</span>' : ""}
           <h2>${esc(c.name)}</h2>
           <div style="font-size:.85rem">${esc(c.owner)}</div>
           <ul class="items-mini">${c.items.slice(0, 4).map((i) => `<li>${statusBadge(i.status)}${esc(i.name)}</li>`).join("")}${c.items.length > 4 ? `<li>…他${c.items.length - 4}件</li>` : ""}</ul>
@@ -354,7 +347,7 @@
   function linkList(c) {
     // 各欄に複数URL（改行区切り）が入っていてもOK。「表示名 URL」と書くと表示名がボタン名になる
     const links = [
-      ["サークルサイト", c.url], ["Pixiv", c.pixiv], ["リンク1", c.other1], ["リンク2", c.other2],
+      ["サークルサイト", c.url], ["リンク1", c.other1], ["リンク2", c.other2],
       ["お品書き", c.menu], ["告知", c.notice],
     ].flatMap(([t, v]) => {
       const ls = parseLinks(v);
@@ -404,7 +397,6 @@
         ${cutHtml(c)}
         <div style="flex:1;min-width:200px">
           <span class="space">${esc(c.spaceRaw)}</span>
-          ${c.r18 ? '<span class="badge b-r18">R-18あり</span>' : ""}
           <h2>${esc(c.name)}</h2>
           <dl class="meta">
             <dt>代表者</dt><dd>${esc(c.owner) || "-"}</dd>
@@ -412,7 +404,6 @@
               const who = c.twitters.length > 1 ? (t.label || c.owners[k] || "") : "";
               return link(t.url, "@" + t.id) + (who ? `<span class="tw-label">（${esc(who)}）</span>` : "");
             }).join("<br>") : "-"}</dd>
-            <dt>電子決済</dt><dd>${esc(c.pay) || "-"}</dd>
           </dl>
           ${linkList(c)}
           ${onMap ? `<button class="to-map" data-space="${esc(onMap)}">📍 配置図で場所を見る</button>` : ""}

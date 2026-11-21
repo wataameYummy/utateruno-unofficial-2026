@@ -34,13 +34,19 @@
       return urls.map((url) => ({ label, url }));
     });
   }
-  // 「@id」「id」「URL」「表示名 @id」→ {label, id, url}
+  // 「@id」「id」「URL（?s=21 などが付いていてもOK）」「表示名 @id」→ {label, id, url}
   function parseTwitters(v) {
     return lines(v).flatMap((line) => line.split(/[、,]/)).map((x) => x.trim()).filter(Boolean).map((line) => {
-      const m = line.match(/(?:https?:\/\/(?:www\.)?(?:x|twitter)\.com\/|@)?([A-Za-z0-9_]{1,15})\/?\s*$/);
-      if (!m) return null;
-      const label = line.slice(0, m.index).replace(/[:：\s（(]+$/, "").trim();
-      return { label, id: m[1], url: "https://x.com/" + m[1] };
+      let id = "", rest = line;
+      const u = line.match(/https?:\/\/(?:www\.|mobile\.)?(?:x|twitter)\.com\/@?([A-Za-z0-9_]{1,15})\S*/i);
+      if (u) { id = u[1]; rest = line.replace(u[0], ""); }
+      else {
+        const m = line.match(/@?([A-Za-z0-9_]{1,15})\s*$/);
+        if (m) { id = m[1]; rest = line.slice(0, m.index); }
+      }
+      if (!id) return null;
+      const label = rest.replace(/https?:\/\/\S+/g, "").replace(/[:：\s（()）]+/g, " ").trim();
+      return { label, id, url: "https://x.com/" + id };
     }).filter(Boolean);
   }
 
@@ -76,6 +82,7 @@
           spaces: expandSpaces(val(r, "スペース")),
           name: val(r, "サークル名"),
           url: val(r, "サークルURL"),
+          owners: lines(val(r, "代表者名")),
           owner: lines(val(r, "代表者名")).join("、"),
           twitters: parseTwitters(val(r, "Twitter")),
           pixiv: val(r, "Pixiv"),
@@ -351,7 +358,12 @@
       ["お品書き", c.menu], ["告知", c.notice],
     ].flatMap(([t, v]) => {
       const ls = parseLinks(v);
-      return ls.map((l, k) => [l.label ? (t.startsWith("リンク") ? l.label : `${t}（${l.label}）`) : t + (ls.length > 1 ? k + 1 : ""), l.url]);
+      // 1件なら「サークルサイト」、複数なら「サークルサイト（代表者名）」（行頭に名前があればそれを優先）
+      return ls.map((l, k) => {
+        if (ls.length === 1) return [t.startsWith("リンク") && l.label ? l.label : t, l.url];
+        const who = l.label || c.owners[k] || String(k + 1);
+        return [t.startsWith("リンク") && l.label ? l.label : `${t}（${who}）`, l.url];
+      });
     });
     return `<ul class="links">${links.map(([t, u]) => `<li><a href="${esc(u)}" target="_blank" rel="noopener">${esc(t)}</a></li>`).join("")}</ul>`;
   }
@@ -396,7 +408,10 @@
           <h2>${esc(c.name)}</h2>
           <dl class="meta">
             <dt>代表者</dt><dd>${esc(c.owner) || "-"}</dd>
-            <dt>X</dt><dd>${c.twitters.length ? c.twitters.map((t) => link(t.url, "@" + t.id) + (t.label ? `<span class="tw-label">（${esc(t.label)}）</span>` : "")).join("<br>") : "-"}</dd>
+            <dt>X</dt><dd>${c.twitters.length ? c.twitters.map((t, k) => {
+              const who = c.twitters.length > 1 ? (t.label || c.owners[k] || "") : "";
+              return link(t.url, "@" + t.id) + (who ? `<span class="tw-label">（${esc(who)}）</span>` : "");
+            }).join("<br>") : "-"}</dd>
             <dt>電子決済</dt><dd>${esc(c.pay) || "-"}</dd>
           </dl>
           ${linkList(c)}

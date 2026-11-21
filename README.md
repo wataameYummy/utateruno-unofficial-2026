@@ -56,15 +56,15 @@ Googleスプレッドシートを編集するだけで内容が更新される�
 
 ### 合同サークル（複数の代表者・X・URL）
 「代表者名」「Twitter」「サークルURL」「Pixiv」「その他1/2」「お品書き」「告知」は、**セル内改行（Ctrl/⌘+Enter）で複数入力**できます。
-名前を前に付けると、サイト上で誰のものか分かるように表示されます。
+**代表者名と同じ順番**で書くと、自動で「サークルサイト（1人目の名前）」「@id（1人目の名前）」のように表示されます。1人だけなら「サークルサイト」とだけ表示されます。
 
 ```
-代表者名：  さくら
-            もみじ
-Twitter：   さくら @sakura_xx
-            もみじ https://x.com/momiji_xx
-サークルURL：さくら https://example.com/sakura
-            もみじ https://example.com/momiji
+代表者名：   さくら
+             もみじ
+Twitter：    @sakura_xx
+             https://x.com/momiji_xx?s=21   ← URLでもOK（?s=21 などは自動で除去）
+サークルURL：https://example.com/sakura
+             https://example.com/momiji
 ```
 
 ## 2. CSVとして公開する

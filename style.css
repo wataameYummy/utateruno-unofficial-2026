@@ -4,6 +4,8 @@
   --lav: #a98be8; --lav-soft: #efe7ff; --orange: #ffa62b; --yellow: #ffd25e; --cyan: #5cc8e0;
   /* メインはラベンダー。ピンクは「新」バッジなどワンポイントだけ */
   --primary: #8c72dd; --primary-dark: #6f55c4; --primary-soft: #f1ecfd;
+  --pink: #f2648f; --pink-dark: #d94877; --pink-soft: #fde8ef;
+  --orange-dark: #e8840f;
   --bg: #faf9fc; --fg: #433a52; --muted: #8e869b; --card: #fff; --line: #e7e2ef;
   --accent: var(--primary-dark); --link: #5a6fc0; --new: #f2648f; --old: #5aa9cf; --hl: #ffd25e;
   --radius: 20px;
@@ -149,12 +151,7 @@ dl.meta a:hover { text-decoration: underline; }
 /* ===================== ポップテーマ ===================== */
 body {
   font-family: "M PLUS Rounded 1c", "Hiragino Maru Gothic ProN", system-ui, sans-serif;
-  background-color: var(--bg);
-  background-image:
-    radial-gradient(circle, rgba(140,114,221,.07) 2px, transparent 2.5px),
-    radial-gradient(circle, rgba(140,114,221,.05) 2px, transparent 2.5px);
-  background-size: 28px 28px, 28px 28px;
-  background-position: 0 0, 14px 14px;
+  background: var(--bg);
 }
 header {
   background: rgba(255,255,255,.92); backdrop-filter: blur(6px);
@@ -182,14 +179,14 @@ h1 { font-weight: 800; font-size: 1.4rem; letter-spacing: .02em; color: var(--pr
 .filters input[type=search], .filters select {
   font: inherit; border-radius: 999px; border: 2px solid var(--line); background: #fff; padding: 6px 14px;
 }
-.filters input[type=search]:focus, .filters select:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-soft); }
+.filters input[type=search]:focus, .filters select:focus { outline: none; border-color: var(--pink); box-shadow: 0 0 0 3px var(--pink-soft); }
 .filters input[type=checkbox] { accent-color: var(--primary-dark); }
-.filters select.active { border-color: var(--primary); background: var(--primary-soft); color: var(--primary-dark); }
+.filters select.active { border-color: var(--pink); background: var(--pink-soft); color: var(--pink-dark); }
 
 /* 概要 */
 .about-sec { border: none; border-radius: var(--radius); box-shadow: 0 4px 16px rgba(169,139,232,.15); padding: 16px 20px; }
 .about-sec h2 { border-left: none; padding-left: 0; display: flex; align-items: center; gap: 8px; color: var(--fg); }
-.about-sec h2::before { content: ""; width: 10px; height: 10px; border-radius: 50%; background: var(--primary); }
+.about-sec h2::before { content: ""; width: 10px; height: 10px; border-radius: 50%; background: var(--pink); box-shadow: 14px 0 0 var(--orange); margin-right: 14px; }
 .about-sec a { color: var(--link); }
 
 /* サークル一覧 */
@@ -199,28 +196,28 @@ h1 { font-weight: 800; font-size: 1.4rem; letter-spacing: .02em; color: var(--pr
   border: 2px solid transparent; border-radius: var(--radius); padding: 14px 16px;
   box-shadow: 0 4px 14px rgba(110,90,150,.10); transition: transform .12s, box-shadow .12s, border-color .12s;
 }
-.card:hover { transform: translateY(-2px); border-color: var(--primary); box-shadow: 0 8px 20px rgba(110,90,150,.18); }
+.card:hover { transform: translateY(-2px); border-color: var(--pink); box-shadow: 0 8px 20px rgba(110,90,150,.18); }
 .card.is-fav { border-color: var(--yellow); box-shadow: 0 4px 14px rgba(255,166,43,.25); }
 .card h2 { font-weight: 800; }
-.space { color: var(--primary-dark); font-weight: 800; }
+.space { color: var(--pink-dark); font-weight: 800; }
 .badge { border-radius: 999px; padding: 0 8px; font-weight: 700; }
 .memo-mini { background: #fff4d6; color: #8a5a00; border-radius: 999px; }
 
 /* 詳細 */
 dialog { border-radius: 28px; padding: 24px 22px 20px; box-shadow: 0 10px 40px rgba(75,53,80,.3); }
-dialog::backdrop { background: rgba(60,50,80,.45); backdrop-filter: blur(2px); }
+dialog::backdrop { background: rgba(0,0,0,.5); }
 dialog .close { width: 36px; height: 36px; border-radius: 50%; background: var(--primary-soft); color: var(--primary-dark); font-size: 1.3rem; line-height: 1; right: 14px; top: 14px; }
 .d-head h2 { font-weight: 800; }
 .links a { border: 2px solid var(--lav); color: #6b4fc0; background: var(--lav-soft); font-weight: 700; }
 .links a:hover { background: var(--lav); color: #fff; }
-.to-map { background: var(--primary); font: inherit; font-weight: 700; box-shadow: 0 3px 0 var(--primary-dark); padding: 7px 18px; }
-.to-map:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--primary-dark); }
+.to-map { background: var(--orange); font: inherit; font-weight: 700; box-shadow: 0 3px 0 var(--orange-dark); padding: 7px 18px; }
+.to-map:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--orange-dark); }
 .items th { color: var(--muted); border-bottom: 2px solid var(--primary-soft); }
 .items td { border-bottom: 1px dashed var(--line); }
 .voice-tag { background: var(--lav-soft); border-color: transparent; color: #5a4396; border-radius: 999px; padding: 2px 10px; }
 .voice-tag:hover { background: var(--lav); color: #fff; border-color: transparent; }
-.voice-tag.on { background: var(--primary); color: #fff; }
-.voice-more { color: var(--primary-dark); font-weight: 700; }
+.voice-tag.on { background: var(--pink); color: #fff; }
+.voice-more { color: var(--pink-dark); font-weight: 700; }
 .memo-box { border: 2px dashed #ffd48a; background: #fffaf0; border-radius: var(--radius); }
 .memo-box textarea { border-radius: 14px; border: 2px solid #ffe2ad; }
 .memo-box textarea:focus { outline: none; border-color: var(--orange); }
@@ -242,3 +239,12 @@ dialog .close { width: 36px; height: 36px; border-radius: 50%; background: var(-
   .filters { gap: 6px 10px; }
   .filters select { flex: 1 1 40%; min-width: 0; max-width: none; padding: 5px 10px; }
 }
+
+/* 絞り込みメニューの矢印：ブラウザ標準をやめて位置をそろえる */
+.filters select {
+  -webkit-appearance: none; appearance: none;
+  padding-right: 36px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5l5 5 5-5' fill='none' stroke='%238c72dd' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 14px center; background-size: 12px 8px;
+}
+.filters select.active { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5l5 5 5-5' fill='none' stroke='%23d94877' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 14px center; background-size: 12px 8px; }

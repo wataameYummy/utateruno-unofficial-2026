@@ -91,21 +91,23 @@
           notice: val(r, "告知"),
           updated: val(r, "更新日時"),
           items: [],
+          voices: [],
         };
         circles.push(cur);
       }
+      // 音源はサークル単位。どの行に書いてもまとめて1つのリストにする（重複は除く）
+      if (cur) for (const v of splitVoices(val(r, "音源") || val(r, "使用音源"))) if (!cur.voices.includes(v)) cur.voices.push(v);
       if (cur && val(r, "頒布物")) {
         cur.items.push({
           name: val(r, "頒布物"), kind: val(r, "種別"), status: val(r, "新/既"),
           price: val(r, "価格"), sample: val(r, "見本等"), note: val(r, "備考"),
-          voices: splitVoices(val(r, "音源") || val(r, "使用音源")),
         });
         if (val(r, "更新日時") > cur.updated) cur.updated = val(r, "更新日時");
       }
     }
     for (const c of circles) {
       c.hasNew = c.items.some((i) => i.status.includes("新"));
-      c.text = [c.spaceRaw, ...c.spaces, c.name, c.owner, ...c.twitters.map((t) => t.id), ...c.items.flatMap((i) => [i.name, i.kind, i.note, ...i.voices])].join(" ").normalize("NFKC").toLowerCase();
+      c.text = [c.spaceRaw, ...c.spaces, c.name, c.owner, ...c.twitters.map((t) => t.id), ...c.items.flatMap((i) => [i.name, i.kind, i.note]), ...c.voices].join(" ").normalize("NFKC").toLowerCase();
     }
     return circles;
   }
@@ -421,6 +423,7 @@
               const who = c.twitters.length > 1 ? (t.label || c.owners[k] || "") : "";
               return link(t.url, "@" + t.id) + (who ? `<span class="tw-label">（${esc(who)}）</span>` : "");
             }).join("<br>") : "-"}</dd>
+            ${c.voices.length ? `<dt>音源</dt><dd>${voicesHtml(c.voices)}</dd>` : ""}
           </dl>
           ${linkList(c)}
           ${onMap ? `<button class="to-map" data-space="${esc(onMap)}">📍 配置図で場所を見る</button>` : ""}
@@ -432,8 +435,7 @@
           <td>${esc(i.name)}</td><td>${esc(i.kind)}</td><td>${statusBadge(i.status)}</td>
           <td class="price">${i.price ? (/^\d+$/.test(i.price) ? "¥" + Number(i.price).toLocaleString() : esc(i.price)) : "-"}</td>
           <td>${i.sample ? link(i.sample, safeUrl(i.sample) ? "見本" : i.sample) : ""}</td>
-          <td class="c-note">${i.note ? `<div class="note-box"><div class="note">${linkify(i.note)}</div></div>` : ""}</td></tr>
-          ${i.voices.length ? `<tr class="voice-row"><td colspan="6">${voicesHtml(i.voices)}</td></tr>` : ""}`).join("") || '<tr><td colspan="6">頒布物情報はまだありません</td></tr>'}</tbody>
+          <td class="c-note">${i.note ? `<div class="note-box"><div class="note">${linkify(i.note)}</div></div>` : ""}</td></tr>`).join("") || '<tr><td colspan="6">頒布物情報はまだありません</td></tr>'}</tbody>
       </table></div></div>
       <div class="memo-box">
         <label for="memo-input">📝 自分用メモ <small>（このブラウザにだけ保存されます）</small></label>

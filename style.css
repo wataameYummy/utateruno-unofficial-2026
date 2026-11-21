@@ -94,7 +94,6 @@ dl.meta a:hover { text-decoration: underline; }
 .items td:first-child { white-space: normal; min-width: 9em; }
 .voice-row td { padding-top: 0; }
 .voices { background: var(--bg); border-radius: 8px; padding: 6px 10px; position: sticky; left: 4px; max-width: calc(var(--wrapw, 100%) - 8px); }
-.voice-label { font-size: .78rem; color: var(--muted); display: block; margin-bottom: 4px; }
 .voice-list { display: flex; flex-wrap: wrap; gap: 4px 6px; margin: 0; padding: 0; list-style: none; white-space: normal; }
 .voice-list li { font-size: .8rem; padding: 1px 8px; border-radius: 999px; background: var(--card); border: 1px solid var(--line); }
 .voices:not(.open) .voice-list li.more { display: none; }

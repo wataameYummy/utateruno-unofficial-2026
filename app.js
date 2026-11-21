@@ -382,7 +382,7 @@
   function voicesHtml(vs) {
     const chips = vs.map((v, k) => `<li${k >= VOICE_SHOW ? " class=more" : ""}>${esc(v)}</li>`).join("");
     const more = vs.length > VOICE_SHOW ? `<button class="voice-more" data-rest="${vs.length - VOICE_SHOW}">＋ 他${vs.length - VOICE_SHOW}件を表示</button>` : "";
-    return `<div class="voices"><span class="voice-label">🎤 使用音源 ${vs.length}</span><ul class="voice-list">${chips}</ul>${more}</div>`;
+    return `<div class="voices"><ul class="voice-list" aria-label="使用音源">${chips}</ul>${more}</div>`;
   }
 
   // スクロールできる部分に案内を出す（スマホではスクロールバーが見えないため）

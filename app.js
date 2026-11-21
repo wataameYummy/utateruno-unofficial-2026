@@ -516,7 +516,8 @@
       e.preventDefault();
       const sec = document.getElementById("group-" + a.dataset.group);
       const hdr = getComputedStyle($("header")).position === "sticky" ? $("header").offsetHeight : 0;
-      if (sec) window.scrollTo({ top: sec.getBoundingClientRect().top + scrollY - hdr - 8, behavior: "smooth" });
+      const nav = $(".group-nav") ? $(".group-nav").offsetHeight : 0;
+      if (sec) window.scrollTo({ top: sec.getBoundingClientRect().top + scrollY - hdr - nav - 8, behavior: "smooth" });
     });
     $("#view-list").addEventListener("click", (e) => {
       if (e.target.closest(".fav-btn")) return;
@@ -584,6 +585,12 @@
     });
 
     let saved = "about"; try { saved = localStorage.getItem("view") || "about"; } catch {}
+    // ヘッダーの高さを CSS 変数に（A,B,C ボタンをその下に固定するため）
+    const setHdr = () => document.documentElement.style.setProperty("--hdr-h",
+      (getComputedStyle($("header")).position === "sticky" ? $("header").offsetHeight : 0) + "px");
+    setHdr();
+    window.addEventListener("resize", setHdr);
+    if (window.ResizeObserver) new ResizeObserver(setHdr).observe($("header"));
     updateFavCount();
     renderList();
     setView(saved);

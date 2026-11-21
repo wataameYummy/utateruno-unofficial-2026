@@ -17,4 +17,6 @@ window.SITE_CONFIG = {
   showCuts: false,
   // サークル一覧のブロック見出しの色（配置図の色と同じ）
   blockColors: { A: "#e8b4b4", B: "#c3dcf2", C: "#fefbd6", D: "#dcf5de", E: "#e3d9f3" },
+  // 同じブロックの濃い色（文字・枠用）
+  blockDarkColors: { A: "#c4545c", B: "#3b7cc0", C: "#b08a0c", D: "#3e9653", E: "#7a5cc0" },
 };

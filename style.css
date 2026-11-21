@@ -248,3 +248,16 @@ dialog .close { width: 36px; height: 36px; border-radius: 50%; background: var(-
   background-repeat: no-repeat; background-position: right 14px center; background-size: 12px 8px;
 }
 .filters select.active { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5l5 5 5-5' fill='none' stroke='%23d94877' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 14px center; background-size: 12px 8px; }
+
+/* ===== サークル一覧：ブロックごとのテーマカラー（--gc 淡い色 / --gd 濃い色） ===== */
+.group-nav a { background: var(--gc); color: var(--gd); border: 2px solid transparent; }
+.group-nav a:hover { border-color: var(--gd); }
+.group-nav small { color: var(--gd); }
+.group-title { background: var(--gc); color: var(--gd); border-radius: 999px; padding: 6px 16px 6px 6px; box-shadow: none; }
+.group-title .g-letter { display: inline-grid; place-items: center; width: 34px; height: 34px; border-radius: 50%; background: var(--gd); color: #fff; font-size: 1.15rem; font-weight: 800; }
+.group-title small { color: var(--gd); opacity: .85; }
+.group { --gm: color-mix(in srgb, var(--gd) 38%, #fff); }
+.group .card { background: linear-gradient(var(--gm), var(--gm)) top / 100% 6px no-repeat, #fff; border: 2px solid color-mix(in srgb, var(--gd) 22%, #fff); padding-top: 18px; }
+.group .card:hover { border-color: var(--gd); box-shadow: 0 8px 20px color-mix(in srgb, var(--gd) 22%, transparent); }
+.group .card .space { color: var(--gd); }
+.group .card.is-fav { border-color: var(--yellow); }

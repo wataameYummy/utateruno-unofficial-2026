@@ -171,12 +171,13 @@
       if (!groups.has(g)) groups.set(g, []);
       groups.get(g).push(c);
     }
-    const colors = CFG.blockColors || {};
+    const colors = CFG.blockColors || {}, darks = CFG.blockDarkColors || {};
+    const gvars = (g) => `--gc:${esc(colors[g] || "#ece8f2")};--gd:${esc(darks[g] || "#7a7090")}`;
     const nav = groups.size > 1 ? `<nav class="group-nav">${[...groups.keys()].map((g) =>
-      `<a href="#" data-group="${esc(g)}" style="--gc:${esc(colors[g] || "#ddd")}">${esc(g)}<small>${groups.get(g).length}</small></a>`).join("")}</nav>` : "";
+      `<a href="#" data-group="${esc(g)}" style="${gvars(g)}">${esc(g)}<small>${groups.get(g).length}</small></a>`).join("")}</nav>` : "";
     $("#view-list").innerHTML = list.length ? nav + [...groups].map(([g, cs]) => `
-      <section class="group" id="group-${esc(g)}" style="--gc:${esc(colors[g] || "#ddd")}">
-        <h2 class="group-title"><span>${esc(g)}</span>${g === "その他" ? "" : "ブロック"}<small>${cs.length}サークル</small></h2>
+      <section class="group" id="group-${esc(g)}" style="${gvars(g)}">
+        <h2 class="group-title"><span class="g-letter">${esc(g)}</span>${g === "その他" ? "" : "ブロック"}<small>${cs.length}サークル</small></h2>
         <div class="group-grid">${cs.map(cardHtml).join("")}</div>
       </section>`).join("") : "<p>該当するサークルがありません。</p>";
     $("#status").textContent = `${list.length} / ${circles.length} サークル`;

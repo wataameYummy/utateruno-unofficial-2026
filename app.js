@@ -23,11 +23,27 @@
     return String(v || "").split(/\r?\n|[、，,]/).map((x) => x.replace(/^[\s・･●○\-－]+/, "").trim()).filter(Boolean);
   }
 
-  function twitterUrl(v) {
-    if (!v) return "";
-    if (/^https?:\/\//.test(v)) return v;
-    return "https://x.com/" + v.replace(/^@/, "");
+  // 1つのセルに複数入れられる欄（合同サークル用）：改行区切り
+  const lines = (v) => String(v || "").split(/\r?\n/).map((x) => x.trim()).filter(Boolean);
+  // 「表示名 URL」「表示名：URL」→ {label, url}
+  function parseLinks(v) {
+    return lines(v).flatMap((line) => {
+      const urls = line.match(/https?:\/\/\S+/g);
+      if (!urls) return [];
+      const label = line.replace(/https?:\/\/\S+/g, "").replace(/[:：\s]+$/, "").trim();
+      return urls.map((url) => ({ label, url }));
+    });
   }
+  // 「@id」「id」「URL」「表示名 @id」→ {label, id, url}
+  function parseTwitters(v) {
+    return lines(v).flatMap((line) => line.split(/[、,]/)).map((x) => x.trim()).filter(Boolean).map((line) => {
+      const m = line.match(/(?:https?:\/\/(?:www\.)?(?:x|twitter)\.com\/|@)?([A-Za-z0-9_]{1,15})\/?\s*$/);
+      if (!m) return null;
+      const label = line.slice(0, m.index).replace(/[:：\s（(]+$/, "").trim();
+      return { label, id: m[1], url: "https://x.com/" + m[1] };
+    }).filter(Boolean);
+  }
+
   function cutUrl(v) {
     if (!v) return "";
     if (/^https?:\/\//.test(v)) return v;
@@ -60,9 +76,8 @@
           spaces: expandSpaces(val(r, "スペース")),
           name: val(r, "サークル名"),
           url: val(r, "サークルURL"),
-          owner: val(r, "代表者名"),
-          twitter: twitterUrl(val(r, "Twitter")),
-          twitterId: val(r, "Twitter").replace(/^https?:\/\/(x|twitter)\.com\//, "").replace(/^@/, ""),
+          owner: lines(val(r, "代表者名")).join("、"),
+          twitters: parseTwitters(val(r, "Twitter")),
           pixiv: val(r, "Pixiv"),
           other1: val(r, "その他1"),
           other2: val(r, "その他2"),
@@ -86,7 +101,7 @@
     }
     for (const c of circles) {
       c.hasNew = c.items.some((i) => i.status.includes("新"));
-      c.text = [c.spaceRaw, ...c.spaces, c.name, c.owner, c.twitterId, ...c.items.flatMap((i) => [i.name, i.kind, i.note, ...i.voices])].join(" ").normalize("NFKC").toLowerCase();
+      c.text = [c.spaceRaw, ...c.spaces, c.name, c.owner, ...c.twitters.map((t) => t.id), ...c.items.flatMap((i) => [i.name, i.kind, i.note, ...i.voices])].join(" ").normalize("NFKC").toLowerCase();
     }
     return circles;
   }
@@ -330,11 +345,15 @@
 
   // ===== 詳細 =====
   function linkList(c) {
+    // 各欄に複数URL（改行区切り）が入っていてもOK。「表示名 URL」と書くと表示名がボタン名になる
     const links = [
-      ["サークルサイト", c.url], ["X (Twitter)", c.twitter], ["Pixiv", c.pixiv],
-      ["リンク1", c.other1], ["リンク2", c.other2], ["お品書き", c.menu], ["告知", c.notice],
-    ].filter(([, u]) => safeUrl(u));
-    return `<ul class="links">${links.map(([t, u]) => `<li><a href="${esc(u)}" target="_blank" rel="noopener">${t}</a></li>`).join("")}</ul>`;
+      ["サークルサイト", c.url], ["Pixiv", c.pixiv], ["リンク1", c.other1], ["リンク2", c.other2],
+      ["お品書き", c.menu], ["告知", c.notice],
+    ].flatMap(([t, v]) => {
+      const ls = parseLinks(v);
+      return ls.map((l, k) => [l.label ? (t.startsWith("リンク") ? l.label : `${t}（${l.label}）`) : t + (ls.length > 1 ? k + 1 : ""), l.url]);
+    });
+    return `<ul class="links">${links.map(([t, u]) => `<li><a href="${esc(u)}" target="_blank" rel="noopener">${esc(t)}</a></li>`).join("")}</ul>`;
   }
 
   const VOICE_SHOW = 8; // これより多い音源は折りたたむ
@@ -377,7 +396,7 @@
           <h2>${esc(c.name)}</h2>
           <dl class="meta">
             <dt>代表者</dt><dd>${esc(c.owner) || "-"}</dd>
-            <dt>X</dt><dd>${c.twitterId ? link(c.twitter, "@" + c.twitterId) : "-"}</dd>
+            <dt>X</dt><dd>${c.twitters.length ? c.twitters.map((t) => link(t.url, "@" + t.id) + (t.label ? `<span class="tw-label">（${esc(t.label)}）</span>` : "")).join("<br>") : "-"}</dd>
             <dt>電子決済</dt><dd>${esc(c.pay) || "-"}</dd>
           </dl>
           ${linkList(c)}

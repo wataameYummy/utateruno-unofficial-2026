@@ -54,6 +54,19 @@ Googleスプレッドシートを編集するだけで内容が更新される�
 使う場合は「ウェブに公開」したCSVのURLを `config.js` の `aboutCsvUrl` に設定してください。
 未設定の間は `data/about.csv` の内容が表示されます（GitHub上で直接編集してもOK）。
 
+### 合同サークル（複数の代表者・X・URL）
+「代表者名」「Twitter」「サークルURL」「Pixiv」「その他1/2」「お品書き」「告知」は、**セル内改行（Ctrl/⌘+Enter）で複数入力**できます。
+名前を前に付けると、サイト上で誰のものか分かるように表示されます。
+
+```
+代表者名：  さくら
+            もみじ
+Twitter：   さくら @sakura_xx
+            もみじ https://x.com/momiji_xx
+サークルURL：さくら https://example.com/sakura
+            もみじ https://example.com/momiji
+```
+
 ## 2. CSVとして公開する
 1. スプレッドシートで「ファイル → 共有 → ウェブに公開」
 2. 「サークル」シート・「カンマ区切り形式 (.csv)」を選んで公開し、URLをコピー

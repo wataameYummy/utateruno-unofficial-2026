@@ -80,6 +80,7 @@ dl.meta dt { color: var(--muted); }
 dl.meta dd { margin: 0; }
 dialog a, #view-about a { color: var(--link); }
 dl.meta a { text-decoration: none; }
+.tw-label { font-size: .8rem; color: var(--muted); }
 dl.meta a:hover { text-decoration: underline; }
 .items-outer { position: relative; margin-top: 12px; }
 .items-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }

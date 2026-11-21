@@ -129,10 +129,11 @@
 
   function filtered() {
     const q = $("#q").value.normalize("NFKC").toLowerCase().trim();
-    const fNew = $("#f-new").checked, fFav = $("#f-fav").checked, kind = $("#f-kind").value;
+    const fNew = $("#f-new").checked, fFav = $("#f-fav").checked, kind = $("#f-kind").value, voice = $("#f-voice").value;
     return circles.filter((c) =>
       (!q || q.split(/\s+/).every((w) => c.text.includes(w) || (my(c).memo || "").normalize("NFKC").toLowerCase().includes(w))) &&
       (!fFav || my(c).fav) &&
+      (!voice || c.voices.includes(voice)) &&
       (!fNew || c.hasNew) &&
       (!kind || c.items.some((i) => i.kind === kind)));
   }
@@ -381,8 +382,19 @@
   }
 
   const VOICE_SHOW = 8; // これより多い音源は折りたたむ
+  // 価格：セル内改行をそのまま反映。数字だけの行は「¥1,000」の形に
+  function priceHtml(p) {
+    const ls = lines(p);
+    if (!ls.length) return "-";
+    return ls.map((x) => {
+      const n = x.normalize("NFKC").replace(/[,円¥\\\s]/g, "");
+      return /^\d+$/.test(n) ? "¥" + Number(n).toLocaleString() : esc(x);
+    }).join("<br>");
+  }
+
   function voicesHtml(vs) {
-    const chips = vs.map((v, k) => `<li${k >= VOICE_SHOW ? " class=more" : ""}>${esc(v)}</li>`).join("");
+    const cur = $("#f-voice").value;
+    const chips = vs.map((v, k) => `<li${k >= VOICE_SHOW ? " class=more" : ""}><button class="voice-tag${v === cur ? " on" : ""}" data-voice="${esc(v)}" title="「${esc(v)}」で絞り込む">${esc(v)}</button></li>`).join("");
     const more = vs.length > VOICE_SHOW ? `<button class="voice-more" data-rest="${vs.length - VOICE_SHOW}">＋ 他${vs.length - VOICE_SHOW}件を表示</button>` : "";
     return `<div class="voices"><ul class="voice-list" aria-label="使用音源">${chips}</ul>${more}</div>`;
   }
@@ -433,7 +445,7 @@
         <thead><tr><th>頒布物</th><th>種別</th><th>新/既</th><th>価格</th><th>見本等</th><th class="c-note">備考</th></tr></thead>
         <tbody>${c.items.map((i) => `<tr>
           <td>${esc(i.name)}</td><td>${esc(i.kind)}</td><td>${statusBadge(i.status)}</td>
-          <td class="price">${i.price ? (/^\d+$/.test(i.price) ? "¥" + Number(i.price).toLocaleString() : esc(i.price)) : "-"}</td>
+          <td class="price">${priceHtml(i.price)}</td>
           <td>${i.sample ? link(i.sample, safeUrl(i.sample) ? "見本" : i.sample) : ""}</td>
           <td class="c-note">${i.note ? `<div class="note-box"><div class="note">${linkify(i.note)}</div></div>` : ""}</td></tr>`).join("") || '<tr><td colspan="6">頒布物情報はまだありません</td></tr>'}</tbody>
       </table></div></div>
@@ -462,7 +474,8 @@
     const n = circles.filter((c) => my(c).fav).length;
     $("#fav-count").textContent = n ? `（${n}）` : "";
   }
-  function rerender() { renderList(); if (!$("#view-map").hidden) renderMap(); }
+  function rerender() {
+    for (const id of ["#f-kind", "#f-voice"]) $(id).classList.toggle("active", !!$(id).value); renderList(); if (!$("#view-map").hidden) renderMap(); }
 
   async function init() {
     document.title = CFG.title;
@@ -483,6 +496,12 @@
     renderAbout(aRows);
     const kinds = [...new Set(circles.flatMap((c) => c.items.map((i) => i.kind)).filter(Boolean))];
     $("#f-kind").insertAdjacentHTML("beforeend", kinds.map((k) => `<option>${esc(k)}</option>`).join(""));
+    // 音源の絞り込み：扱っているサークルが多い順
+    const vc = new Map();
+    for (const c of circles) for (const v of c.voices) vc.set(v, (vc.get(v) || 0) + 1);
+    const voices = [...vc].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], "ja"));
+    $("#f-voice").insertAdjacentHTML("beforeend", voices.map(([v, n]) => `<option value="${esc(v)}">${esc(v)}（${n}）</option>`).join(""));
+    $("#f-voice").hidden = !voices.length;
 
     document.querySelectorAll(".filters input, .filters select").forEach((el) => el.addEventListener("input", rerender));
     document.querySelectorAll(".tabs button").forEach((b) => b.addEventListener("click", () => setView(b.dataset.view)));
@@ -528,6 +547,15 @@
     $("#detail .close").addEventListener("click", () => $("#detail").close());
     $("#detail").addEventListener("click", (e) => {
       if (e.target.id === "detail") $("#detail").close();
+      const vt = e.target.closest(".voice-tag");
+      if (vt) {
+        $("#f-voice").value = vt.dataset.voice;
+        $("#detail").close();
+        if ($("#view-about").hidden === false) setView("list");
+        rerender();
+        window.scrollTo({ top: 0 });
+        return;
+      }
       const vm = e.target.closest(".voice-more");
       if (vm) {
         const box = vm.closest(".voices"), open = box.classList.toggle("open");
